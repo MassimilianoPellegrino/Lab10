@@ -6,8 +6,11 @@ package it.polito.tdp.rivers;
 
 import java.net.URL;
 import java.util.ResourceBundle;
+import java.util.TreeMap;
 
 import it.polito.tdp.rivers.model.Model;
+import it.polito.tdp.rivers.model.River;
+import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
@@ -25,7 +28,7 @@ public class FXMLController {
     private URL location;
 
     @FXML // fx:id="boxRiver"
-    private ComboBox<?> boxRiver; // Value injected by FXMLLoader
+    private ComboBox<River> boxRiver; // Value injected by FXMLLoader
 
     @FXML // fx:id="txtStartDate"
     private TextField txtStartDate; // Value injected by FXMLLoader
@@ -48,6 +51,38 @@ public class FXMLController {
     @FXML // fx:id="txtResult"
     private TextArea txtResult; // Value injected by FXMLLoader
 
+    @FXML
+    void doCombo(ActionEvent event) {
+    	River r = this.boxRiver.getValue();
+    	this.txtStartDate.setText(model.getPrimaMisurazione(r).toString());
+    	this.txtEndDate.setText(model.getUltimaMisurazione(r).toString());
+    	this.txtNumMeasurements.setText(model.getNumeroMisurazioni(r).toString());
+    	this.txtFMed.setText(String.format("%.2f", model.getFlussoMedio(r)));
+    }
+    
+    @FXML
+    void doSimula(ActionEvent event) {
+    	this.txtResult.clear();
+    	double k = 0;
+    	River r = null;
+    	try {
+    		k = Double.parseDouble(this.txtK.getText());
+    		r = this.boxRiver.getValue();
+    	}catch(NumberFormatException e) {
+    		this.txtResult.setText("Inserire un numero valido");
+    		return;
+    	}catch(NullPointerException e) {
+    		this.txtResult.setText("Selezionare un fiume dal menu");
+    		return;
+    	}
+    	
+    	TreeMap<Integer, Double> mapSim = this.model.getSim(r, k);
+    	int giorni = mapSim.firstKey();
+    	double media = mapSim.get(giorni);
+    	
+    	this.txtResult.setText("Numero giorni erogazione insufficiente: "+giorni+"\nMedia contenuto cistera: "+String.format("%.0f", media)+" m^3");
+    }
+    
     @FXML // This method is called by the FXMLLoader when initialization is complete
     void initialize() {
         assert boxRiver != null : "fx:id=\"boxRiver\" was not injected: check your FXML file 'Scene.fxml'.";
@@ -62,5 +97,6 @@ public class FXMLController {
     
     public void setModel(Model model) {
     	this.model = model;
+    	this.boxRiver.getItems().addAll(model.getAllRivers());
     }
 }
